@@ -40,10 +40,12 @@ const int SERVO_CONTROL = 7; // The pin to control the servo.
 
 const int STREET_LIGHT_PIN = 6; // The pin for the street light.
 
+const int IR_OUTPUT = 5; // Pin for IR output.
+const int IR_INPUT = A0; // Pin for IR input.
+
 const int LDR_PIN = A1; // Pin for LDR input.
 
-const int IR_INPUT = A0; // Pin for IR input.
-const int IR_OUTPUT = 5; // Pin for IR output.
+const int BUTTON_PIN = 4;
 
 Servo gate; // The gate servo.
 
@@ -77,6 +79,7 @@ void setup() {
 
 	// Set the inputs to input mode.
 	pinMode(IR_INPUT, INPUT);
+	pinMode(BUTTON_PIN, INPUT);
 
 	// Set the variables to their inital values.
 	lightState = 0;
@@ -102,7 +105,7 @@ void setup() {
 // Returns if it's dark right now, based on the cutoff.
 bool isDark(int cutoff) {
 	int lightLevel = analogRead(LDR_PIN); 
-	
+	Serial.println(lightLevel);
 	if (lightLevel < cutoff) // If it's dark.
 		return true;
 	else // If it's bright.
@@ -175,7 +178,7 @@ void updateLights() {
 
 // Return whether or now the button is down.
 bool isButtonDown() {
-	return true;
+	return digitalRead(BUTTON_PIN) == HIGH;
 }
 
 // The loop function runs over and over again forever
@@ -185,7 +188,7 @@ void loop() {
 	if (irReading >= 1005) {
 		buzz(50);
 	}
-	*/
+	
 	
 	// TODO: Check later if speedingUp variable is necessary.
 	if (isButtonDown() && !speedingUp && lightState == 0) {
@@ -198,14 +201,14 @@ void loop() {
 		previousMillis = millis();
 		lightState++;
 		updateLights();
+		speedingUp = false;
     }
+	*/
+
+	Serial.println(analogRead(LDR_PIN));
+	delay(500);
 	
 	/*
-	if (isDark(125))
-		digitalWrite(STREET_LIGHT_PIN, HIGH); // Turn off the street light.
-	else
-		digitalWrite(STREET_LIGHT_PIN, LOW); // Turn off the street light.
-	
 	for (int pos = 0; pos <= 180; pos += 1) { // goes from 0 degrees to 180 degrees
 		// in steps of 1 degree
 		gate.write(pos);              // tell servo to go to position in variable 'pos'

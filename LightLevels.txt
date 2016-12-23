@@ -1,0 +1,19 @@
+Engineering Room
+
+Ambient: 174-177
+Hand Shadow:
+	Far: 188-190
+	Medium: 216-221
+	Close: 450-540
+Box Shadow:
+	Far: 190-195
+	Medium: 350-370
+	Close: 820-850
+Flashlight:
+	Far: 193-196
+	Medium: 108-114
+	Close: 8-15 
+Touching: 950
+Dark Room: 630
+
+Room could be between 100-650.
