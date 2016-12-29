@@ -1,11 +1,11 @@
-#include <Servo.h> 
+#include <Servo.h>
 
 // The traffic light structure. This is made of a red, yellow, and green light.
-struct TrafficLight {	
+struct TrafficLight {
 	int redPin;
 	int yellowPin;
 	int greenPin;
-	
+
 	bool red;
 	bool yellow;
 	bool green;
@@ -54,6 +54,8 @@ struct TrafficLight doubleLight; // The two lights that operate together.
 
 bool speedingUp; // If the button has been pressed during this state.
 
+const int LIGHT_CUTOFF = 600; // Turn on the street light if the LDR reading exceeds this. This number chosen based on empirical data.
+
 // The setup function runs once when you press reset or power the board
 void setup() {
 
@@ -61,12 +63,12 @@ void setup() {
 	singleLight.redPin = SINGLE_RED;
 	singleLight.yellowPin = SINGLE_YELLOW;
 	singleLight.greenPin = SINGLE_GREEN;
-	
+
 	// Set the pins of the double light.
 	doubleLight.redPin = DOUBLE_RED;
 	doubleLight.yellowPin = DOUBLE_YELLOW;
 	doubleLight.greenPin = DOUBLE_GREEN;
-	
+
 	// Set the outputs to output mode.
 	pinMode(doubleLight.redPin, OUTPUT);
 	pinMode(doubleLight.yellowPin, OUTPUT);
@@ -86,7 +88,7 @@ void setup() {
 	previousMillis = 0;
 	delayTime = GREEN_TIME;
 	speedingUp = false;
-	
+
 	// Turn off all of the lights at the start.
 	digitalWrite(DOUBLE_RED, LOW);
 	digitalWrite(DOUBLE_YELLOW, LOW);
@@ -94,24 +96,28 @@ void setup() {
 	digitalWrite(SINGLE_RED, LOW);
 	digitalWrite(SINGLE_YELLOW, LOW);
 	digitalWrite(SINGLE_GREEN, LOW);
-	
+
 	digitalWrite(IR_OUTPUT, HIGH);
-	
+
 	gate.attach(SERVO_CONTROL);
-	
+
 	Serial.begin(9600);
 }
 
 // Returns if it's dark right now, based on the cutoff.
-bool isDark(int cutoff) {
-	int lightLevel = analogRead(LDR_PIN); 
-	Serial.println(lightLevel);
-	if (lightLevel < cutoff) // If it's dark.
-		return true;
-	else // If it's bright.
-		return false;
+void updateStreetLight() {
+	int lightLevel = analogRead(LDR_PIN);
+	printSensorReading("LDR", lightLevel);
+	if (lightLevel > LIGHT_CUTOFF) { // If it's dark.
+		digitalWrite(STREET_LIGHT_PIN, HIGH);
+		printPinSet(STREET_LIGHT_PIN, HIGH);
+	} else { // If it's bright.
+		digitalWrite(STREET_LIGHT_PIN, LOW);
+		printPinSet(STREET_LIGHT_PIN, LOW);
+	}
 }
 
+// Print that a given pin is being set to a given level.
 void printPinSet(int pin, int level) {
 	Serial.print("Set pin ");
 	Serial.print(pin);
@@ -120,12 +126,19 @@ void printPinSet(int pin, int level) {
 	Serial.println(".");
 }
 
+// Print the reading of a given sensor.
+void printSensorReading(const char* sensor, int reading) {
+	Serial.print(sensor);
+	Serial.print(" reading is: ");
+	Serial.println(reading);
+}
+
 // Set the specified light to the specified colour.
 void setLight(TrafficLight light, enum lightColours colour) {
 	digitalWrite(light.redPin, LOW);
 	digitalWrite(light.yellowPin, LOW);
 	digitalWrite(light.greenPin, LOW);
-	
+
 	printPinSet(light.redPin, LOW);
 	printPinSet(light.yellowPin, LOW);
 	printPinSet(light.greenPin, LOW);
@@ -176,57 +189,55 @@ void updateLights() {
 	}
 }
 
-// Return whether or now the button is down.
+// Return whether or not the button is down.
 bool isButtonDown() {
 	return digitalRead(BUTTON_PIN) == HIGH;
 }
 
+// Open the gate.
+void openGate() {
+	for (int pos = 0; pos <= 180; pos += 1) {
+		gate.write(pos);
+		delay(5);
+	}
+}
+
+// Close the gate.
+void closeGate() {
+	for (int pos = 180; pos >= -180; pos -= 1) {
+		gate.write(pos);
+		delay(5);
+	}
+}
+
+// Read the IR sensor and update the gate accordingly.
+void updateGate() {
+	int irReading = analogRead(IR_INPUT);		
+	printSensorReading("IR", irReading);
+	if (irReading >= 1005) {
+		openGate();
+	} else {
+		closeGate();
+	}
+}
+
 // The loop function runs over and over again forever
 void loop() {
-	/*int irReading = analogRead(IR_INPUT);
-	Serial.println(irReading);
-	if (irReading >= 1005) {
-		buzz(50);
-	}
-	
-	
-	// TODO: Check later if speedingUp variable is necessary.
-	if (isButtonDown() && !speedingUp && lightState == 0) {
-		speedingUp = true;
-		delayTime -= (delayTime - (currentMillis - previousMillis)) / 2;
-	}
 	
 	unsigned long currentMillis = millis();
+	if (isButtonDown() && !speedingUp && lightState == 0) {
+		speedingUp = true;
+		delayTime -= (delayTime - (currentMillis - previousMillis)) / 2; // Subtract half of the time remaining from the light.
+	}
+
 	if (currentMillis - previousMillis >= delayTime) {
 		previousMillis = millis();
 		lightState++;
 		updateLights();
 		speedingUp = false;
-    }
-	*/
+	}
 
-	Serial.println(analogRead(LDR_PIN));
-	delay(500);
-	
-	/*
-	for (int pos = 0; pos <= 180; pos += 1) { // goes from 0 degrees to 180 degrees
-		// in steps of 1 degree
-		gate.write(pos);              // tell servo to go to position in variable 'pos'
-		delay(15);                       // waits 15ms for the servo to reach the position
-	}
-	for (int pos = 180; pos >= -180; pos -= 1) { // goes from 180 degrees to 0 degrees
-		gate.write(pos);              // tell servo to go to position in variable 'pos'
-		delay(15);                       // waits 15ms for the servo to reach the position
-	}
-	
-	gate.write(servoPosition);
-	
-	if (servoPosition == 0)
-		servoPosition = 180;
-	else
-		servoPosition = 0;
-	
-	
-	*/
+	updateStreetLight();
+	updateGate();
+
 }
-
