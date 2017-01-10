@@ -100,6 +100,7 @@ void setup() {
 	digitalWrite(IR_OUTPUT, HIGH);
 
 	gate.attach(SERVO_CONTROL);
+	gate.write(0);
 
 	Serial.begin(9600);
 }
@@ -196,18 +197,12 @@ bool isButtonDown() {
 
 // Open the gate.
 void openGate() {
-	for (int pos = 0; pos <= 180; pos += 1) {
-		gate.write(pos);
-		delay(5);
-	}
+	gate.write(90);
 }
 
 // Close the gate.
 void closeGate() {
-	for (int pos = 180; pos >= -180; pos -= 1) {
-		gate.write(pos);
-		delay(5);
-	}
+	gate.write(0);
 }
 
 // Read the IR sensor and update the gate accordingly.
@@ -236,8 +231,6 @@ void loop() {
 		updateLights();
 		speedingUp = false;
 	}
-
-	updateStreetLight();
 	updateGate();
-
+	updateStreetLight();
 }
