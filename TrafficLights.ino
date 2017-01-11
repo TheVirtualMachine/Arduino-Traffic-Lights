@@ -188,6 +188,11 @@ void updateLights() {
 		delayTime = TWO_RED_TIME;
 		lightState = 0;
 	}
+	if (speedingUp && lightState != 3) { // If we are speeding up and it's not time for the pedestrians to cross.
+		delayTime /= 2; // Half the delay.
+	} else {
+		speedingUp = false; // Stop speeding up.
+	}
 }
 
 // Return whether or not the button is down.
@@ -220,16 +225,18 @@ void updateGate() {
 void loop() {
 	
 	unsigned long currentMillis = millis();
-	if (isButtonDown() && !speedingUp && lightState == 0) {
+	if (isButtonDown() && !speedingUp) { // If the button has been pressed.
 		speedingUp = true;
-		delayTime -= (delayTime - (currentMillis - previousMillis)) / 2; // Subtract half of the time remaining from the light.
+		if (lightState == 3) // If the pedestrians can cross.
+			speedingUp = false; // Stop speeding up.
+		else // If the pedestrians cannot cross.
+			delayTime -= (delayTime - (currentMillis - previousMillis)) / 2; // Subtract half of the time remaining from the light.
 	}
 
 	if (currentMillis - previousMillis >= delayTime) {
 		previousMillis = millis();
 		lightState++;
 		updateLights();
-		speedingUp = false;
 	}
 	updateGate();
 	updateStreetLight();
