@@ -1,4 +1,5 @@
 #include <Servo.h>
+#include "pitches.h"
 
 // The traffic light structure. This is made of a red, yellow, and green light.
 struct TrafficLight {
@@ -18,15 +19,26 @@ enum lightColours {
     GREEN
 };
 
+const int NOTE_REST = 0;
+
+unsigned int currentNote = 0; // The index of current note being played in the arrays.
+unsigned long noteEndTime = 0; // The time in milliseconds to stop the current note.
+
+// Notes in the melody.
+const int melody[] = { NOTE_C2, NOTE_DS4, NOTE_DS4, NOTE_C3, NOTE_DS4, NOTE_DS4, NOTE_AS3, NOTE_C3, NOTE_DS4, NOTE_DS4, NOTE_REST, NOTE_DS4, NOTE_DS4, NOTE_F2, NOTE_F4, NOTE_F4, NOTE_F2, NOTE_F4, NOTE_F4, NOTE_REST, NOTE_F4, NOTE_F4, NOTE_DS2, NOTE_D2, NOTE_C2, NOTE_C4, NOTE_C2, NOTE_DS4, NOTE_DS4, NOTE_C3, NOTE_DS4, NOTE_DS4, NOTE_AS3, NOTE_C3, NOTE_DS4, NOTE_DS4, NOTE_REST, NOTE_DS4, NOTE_DS4, NOTE_F2, NOTE_F4, NOTE_F4, NOTE_F2, NOTE_F4, NOTE_F4, NOTE_REST, NOTE_F4, NOTE_F4, NOTE_DS2, NOTE_D2, NOTE_C2, NOTE_C4, NOTE_DS3, NOTE_DS3, NOTE_AS2, NOTE_AS2, NOTE_C3, NOTE_C3, NOTE_DS3, NOTE_DS3, NOTE_REST, NOTE_DS3, NOTE_DS3, NOTE_REST, NOTE_DS3, NOTE_DS3, NOTE_F2, NOTE_F4, NOTE_F4, NOTE_F2, NOTE_F4, NOTE_F4, NOTE_REST, NOTE_F4, NOTE_G2, NOTE_DS2, NOTE_D2, NOTE_C2, NOTE_C4, NOTE_DS3, NOTE_DS3, NOTE_AS2, NOTE_AS2, NOTE_C3, NOTE_C3, NOTE_DS3, NOTE_DS3, NOTE_REST, NOTE_DS3, NOTE_DS3, NOTE_REST, NOTE_DS3, NOTE_DS3, NOTE_F2, NOTE_F4, NOTE_F4, NOTE_F2, NOTE_F4, NOTE_F4, NOTE_REST, NOTE_F4, NOTE_G2, NOTE_DS2, NOTE_D2, NOTE_C2, NOTE_C4, NOTE_F2, NOTE_F2, NOTE_GS2, NOTE_GS2, NOTE_C3, NOTE_C3, NOTE_F4, NOTE_F4, NOTE_REST, NOTE_F4, NOTE_F4, NOTE_REST, NOTE_F4, NOTE_F4, NOTE_G4, NOTE_G4, NOTE_D4, NOTE_D4, NOTE_DS4, NOTE_DS4, NOTE_C4, NOTE_C4, NOTE_REST, NOTE_C4, NOTE_C4, NOTE_REST, NOTE_C4, NOTE_C4, NOTE_F2, NOTE_F2, NOTE_GS2, NOTE_GS2, NOTE_C3, NOTE_C3, NOTE_F4, NOTE_F4, NOTE_REST, NOTE_F4, NOTE_F4, NOTE_REST, NOTE_F4, NOTE_F4, NOTE_G4, NOTE_G4, NOTE_D4, NOTE_D4, NOTE_DS4, NOTE_DS4, NOTE_C4, NOTE_C4, NOTE_REST, NOTE_C4, NOTE_C4, NOTE_REST, NOTE_C4, NOTE_C4, NOTE_GS2, NOTE_GS2, NOTE_G2, NOTE_G2, NOTE_F2, NOTE_F2, NOTE_DS4, NOTE_DS4, NOTE_REST, NOTE_DS4, NOTE_DS4, NOTE_REST, NOTE_DS4, NOTE_DS4, NOTE_DS2, NOTE_DS2, NOTE_D2, NOTE_D2, NOTE_C2, NOTE_C2, NOTE_C4, NOTE_C4, NOTE_REST, NOTE_C4, NOTE_C4, NOTE_REST, NOTE_C4, NOTE_C4, NOTE_GS2, NOTE_GS2, NOTE_G2, NOTE_G2, NOTE_F2, NOTE_F2, NOTE_DS4, NOTE_DS4,  NOTE_REST, NOTE_DS4, NOTE_DS4, NOTE_REST, NOTE_DS4, NOTE_DS4, NOTE_DS3, NOTE_DS3, NOTE_AS2, NOTE_AS2, NOTE_C3, NOTE_C3, NOTE_C4, NOTE_C4, NOTE_REST, NOTE_C4, NOTE_C4, NOTE_REST, NOTE_C4, NOTE_C4,  NOTE_GS2, NOTE_GS2, NOTE_G2, NOTE_G2, NOTE_F2, NOTE_F2, NOTE_DS4, NOTE_DS4, NOTE_REST, NOTE_DS4, NOTE_DS4, NOTE_REST, NOTE_DS4, NOTE_DS4, NOTE_DS2, NOTE_DS2, NOTE_D2, NOTE_D2, NOTE_C2, NOTE_C2, NOTE_C4, NOTE_C4, NOTE_REST, NOTE_C4, NOTE_C4, NOTE_REST, NOTE_C4, NOTE_C4, NOTE_GS2, NOTE_GS2, NOTE_G2, NOTE_G2, NOTE_F2, NOTE_F2, NOTE_DS4, NOTE_DS4,  NOTE_REST, NOTE_DS4, NOTE_DS4, NOTE_REST, NOTE_DS4, NOTE_DS4, NOTE_DS3, NOTE_DS3, NOTE_AS2, NOTE_AS2, NOTE_C3, NOTE_C3, NOTE_C4, NOTE_C4, NOTE_REST, NOTE_C4, NOTE_C4, NOTE_REST, NOTE_C4, NOTE_C4};
+
+// Note durations: 4 = quarter note, 8 = eighth note, etc.
+const int noteDurations[] = { 4, 8, 8, 4, 8, 8, 8, 8, 8, 8, 4, 8, 8, 4, 8, 8, 4, 8, 8, 4, 8, 8, 8, 8, 8, 8, 4, 8, 8, 4, 8, 8, 8, 8, 8, 8, 4, 8, 8, 4, 8, 8, 4, 8, 8, 4, 8, 8, 8, 8, 8, 8,  8, 8, 8, 8, 8, 8, 8, 8, 4, 8, 8, 4, 8, 8, 4, 8, 8, 4, 8, 8, 4, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 4, 8, 8, 4, 8, 8, 4, 8, 8, 4, 8, 8, 4, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 4, 8, 8, 4, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 4, 8, 8, 4, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,4, 8, 8, 4, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 4, 8, 8, 4, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 4, 8, 8, 4, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 4, 8, 8, 4, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 4, 8, 8, 4, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 4, 8, 8, 4, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 4, 8, 8, 4, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 4, 8, 8, 4, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 4, 8, 8, 4, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 4, 8, 8, 4, 8, 8};
+
 unsigned char lightState; // The current state of the traffic lights, in the range [0, 5].
 
 unsigned long previousMillis; // The time since we last changed the light.
 
 int delayTime; // How long to wait before changing the light.
 
-const int TWO_RED_TIME = 1000; // How long to stay at two red lights.
-const int YELLOW_TIME = 1500; // How long to stay at a yellow light.
-const int GREEN_TIME = 3000; // How long to stay at a green light.
+const int RED_TIME = 2500; // How long to stay at a red light.
+const int YELLOW_TIME = 3000; // How long to stay at a yellow light.
+const int GREEN_TIME = 5000; // How long to stay at a green light.
 
 const int DOUBLE_RED = 13; // Output pin to the two red lights.
 const int DOUBLE_YELLOW = 12; // Output pin to the two yellow lights.
@@ -45,7 +57,9 @@ const int IR_INPUT = A0; // Pin for IR input.
 
 const int LDR_PIN = A1; // Pin for LDR input.
 
-const int BUTTON_PIN = 4;
+const int BUTTON_PIN = 4; // Pin for button input.
+
+const int SPEAKER_PIN = 3; // Pin for the speaker.
 
 Servo gate; // The gate servo.
 
@@ -54,11 +68,10 @@ struct TrafficLight doubleLight; // The two lights that operate together.
 
 bool speedingUp; // If the button has been pressed during this state.
 
-const int LIGHT_CUTOFF = 600; // Turn on the street light if the LDR reading exceeds this. This number chosen based on empirical data.
+const int LIGHT_CUTOFF = 600; // Turn on the street light if the LDR reading exceeds this. This number was chosen based on empirical data.
 
 // The setup function runs once when you press reset or power the board
 void setup() {
-
 	// Set the pins of the single light.
 	singleLight.redPin = SINGLE_RED;
 	singleLight.yellowPin = SINGLE_YELLOW;
@@ -103,6 +116,7 @@ void setup() {
 	gate.write(0);
 
 	Serial.begin(9600);
+	Serial.print(sizeof(melody));
 }
 
 // Returns if it's dark right now, based on the cutoff.
@@ -173,7 +187,7 @@ void updateLights() {
 	} else if (lightState == 2) {
 		setLight(doubleLight, RED);
 		setLight(singleLight, RED);
-		delayTime = TWO_RED_TIME;
+		delayTime = RED_TIME;
 	} else if (lightState == 3) {
 		setLight(doubleLight, GREEN);
 		setLight(singleLight, RED);
@@ -185,7 +199,7 @@ void updateLights() {
 	} else {
 		setLight(doubleLight, RED);
 		setLight(singleLight, RED);
-		delayTime = TWO_RED_TIME;
+		delayTime = RED_TIME;
 		lightState = 0;
 	}
 	if (speedingUp && lightState != 3) { // If we are speeding up and it's not time for the pedestrians to cross.
@@ -221,9 +235,30 @@ void updateGate() {
 	}
 }
 
+// Play the next note in the song.
+void updateMusic() {
+	noTone(SPEAKER_PIN); // Ensure no tone is playing.
+
+	if (currentNote >= (sizeof(melody) / sizeof(unsigned long))) // If we have reached the end of the song.
+		currentNote = 0;
+
+	int noteDuration = 1600 / noteDurations[currentNote];
+
+	if (speedingUp) // If we are speeding up the lights, speed up the song.
+		noteDuration /= 2;
+
+	if (melody[currentNote] == NOTE_REST) { // If this note is a rest, don't play anything.
+		noteEndTime = millis() + noteDuration * 1.30; // Set the time for when to play the next note to noteDuration + 30%.
+	} else {
+		tone(SPEAKER_PIN, melody[currentNote], noteDuration);
+		noteEndTime = millis() + noteDuration * 1.30; // Set the time for when to play the next note to noteDuration + 30%.
+	}
+	currentNote++;
+}
+
+
 // The loop function runs over and over again forever
 void loop() {
-	
 	unsigned long currentMillis = millis();
 	if (isButtonDown() && !speedingUp) { // If the button has been pressed.
 		speedingUp = true;
@@ -240,4 +275,8 @@ void loop() {
 	}
 	updateGate();
 	updateStreetLight();
+	
+	if (millis() >= noteEndTime) {
+		updateMusic();
+	}
 }
