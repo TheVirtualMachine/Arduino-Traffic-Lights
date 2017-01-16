@@ -63,12 +63,18 @@ const int SPEAKER_PIN = 3; // Pin for the speaker.
 
 Servo gate; // The gate servo.
 
+const int closedDegrees = 65; // The angle to set the gate to in order to close it.
+
 struct TrafficLight singleLight; // The light that operates on its own.
 struct TrafficLight doubleLight; // The two lights that operate together.
 
 bool speedingUp; // If the button has been pressed during this state.
 
 const int LIGHT_CUTOFF = 600; // Turn on the street light if the LDR reading exceeds this. This number was chosen based on empirical data.
+
+unsigned long gateOpenTime; // The time in milliseconds to open the gate.
+unsigned long gateCloseTime; // The time in milliseconds to close the gate.
+bool activeGate; // If the gate is currently active.
 
 // The setup function runs once when you press reset or power the board
 void setup() {
@@ -113,7 +119,7 @@ void setup() {
 	digitalWrite(IR_OUTPUT, HIGH);
 
 	gate.attach(SERVO_CONTROL);
-	gate.write(0);
+	gate.write(closedDegrees);
 
 	Serial.begin(9600);
 	Serial.print(sizeof(melody));
@@ -216,30 +222,41 @@ bool isButtonDown() {
 
 // Open the gate.
 void openGate() {
-	gate.write(90);
+	gate.write(180);
 }
 
 // Close the gate.
 void closeGate() {
-	gate.write(0);
+	gate.write(closedDegrees);
 }
 
 // Read the IR sensor and update the gate accordingly.
 void updateGate() {
 	int irReading = analogRead(IR_INPUT);		
 	printSensorReading("IR", irReading);
-	if (irReading >= 1005) {
+
+	if (activeGate && millis() >= gateOpenTime) {
 		openGate();
-	} else {
+	}
+
+	if (activeGate && millis() >= gateCloseTime) {
 		closeGate();
+		activeGate = false;
+	}
+
+	if (irReading >= 800) {
+		activeGate = true;
+		gateOpenTime = millis() + 2000; // Open the gate in two seconds.
+		gateCloseTime = gateOpenTime + 3000; // And keep it open for three seconds.
 	}
 }
+	
 
 // Play the next note in the song.
 void updateMusic() {
 	noTone(SPEAKER_PIN); // Ensure no tone is playing.
 
-	if (currentNote >= (sizeof(melody) / sizeof(unsigned long))) // If we have reached the end of the song.
+	if (currentNote >= (sizeof(melody) / sizeof(int))) // If we have reached the end of the song.
 		currentNote = 0;
 
 	int noteDuration = 1600 / noteDurations[currentNote];
@@ -277,6 +294,6 @@ void loop() {
 	updateStreetLight();
 	
 	if (millis() >= noteEndTime) {
-		updateMusic();
+		//updateMusic();
 	}
 }
