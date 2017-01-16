@@ -61,9 +61,11 @@ const int BUTTON_PIN = 4; // Pin for button input.
 
 const int SPEAKER_PIN = 3; // Pin for the speaker.
 
+const int PEDESTRIAN_RED = 2; // Pin for pedestrian red light.
+
 Servo gate; // The gate servo.
 
-const int closedDegrees = 65; // The angle to set the gate to in order to close it.
+const int CLOSED_DEGREES = 65; // The angle to set the gate to in order to close it.
 
 struct TrafficLight singleLight; // The light that operates on its own.
 struct TrafficLight doubleLight; // The two lights that operate together.
@@ -97,6 +99,7 @@ void setup() {
 	pinMode(singleLight.greenPin, OUTPUT);
 	pinMode(STREET_LIGHT_PIN, OUTPUT);
 	pinMode(IR_OUTPUT, OUTPUT);
+	pinMode(PEDESTRIAN_RED, OUTPUT);
 
 	// Set the inputs to input mode.
 	pinMode(IR_INPUT, INPUT);
@@ -115,11 +118,12 @@ void setup() {
 	digitalWrite(SINGLE_RED, LOW);
 	digitalWrite(SINGLE_YELLOW, LOW);
 	digitalWrite(SINGLE_GREEN, LOW);
+	digitalWrite(PEDESTRIAN_RED, LOW);
 
 	digitalWrite(IR_OUTPUT, HIGH);
 
 	gate.attach(SERVO_CONTROL);
-	gate.write(closedDegrees);
+	gate.write(CLOSED_DEGREES);
 
 	Serial.begin(9600);
 	Serial.print(sizeof(melody));
@@ -182,31 +186,39 @@ void setLight(TrafficLight light, enum lightColours colour) {
  * Reset lightState to 0 if it's greater than or equal to 5.
  */
 void updateLights() {
+	if (lightState >= 6) // Reset light state to beginning when needed.
+		lightState = 0;
+
 	if (lightState == 0) {
 		setLight(doubleLight, RED);
 		setLight(singleLight, GREEN);
+		digitalWrite(PEDESTRIAN_RED, HIGH);
 		delayTime = GREEN_TIME;
 	} else if (lightState == 1) {
 		setLight(doubleLight, RED);
 		setLight(singleLight, YELLOW);
+		digitalWrite(PEDESTRIAN_RED, HIGH);
 		delayTime = YELLOW_TIME;
 	} else if (lightState == 2) {
 		setLight(doubleLight, RED);
 		setLight(singleLight, RED);
+		digitalWrite(PEDESTRIAN_RED, HIGH);
 		delayTime = RED_TIME;
 	} else if (lightState == 3) {
 		setLight(doubleLight, GREEN);
 		setLight(singleLight, RED);
+		digitalWrite(PEDESTRIAN_RED, LOW);
 		delayTime = GREEN_TIME;
 	} else if (lightState == 4) {
 		setLight(doubleLight, YELLOW);
 		setLight(singleLight, RED);
+		digitalWrite(PEDESTRIAN_RED, HIGH);
 		delayTime = YELLOW_TIME;
 	} else {
 		setLight(doubleLight, RED);
 		setLight(singleLight, RED);
+		digitalWrite(PEDESTRIAN_RED, HIGH);
 		delayTime = RED_TIME;
-		lightState = 0;
 	}
 	if (speedingUp && lightState != 3) { // If we are speeding up and it's not time for the pedestrians to cross.
 		delayTime /= 2; // Half the delay.
@@ -227,7 +239,7 @@ void openGate() {
 
 // Close the gate.
 void closeGate() {
-	gate.write(closedDegrees);
+	gate.write(CLOSED_DEGREES);
 }
 
 // Read the IR sensor and update the gate accordingly.
@@ -294,6 +306,6 @@ void loop() {
 	updateStreetLight();
 	
 	if (millis() >= noteEndTime) {
-		//updateMusic();
+		updateMusic();
 	}
 }
